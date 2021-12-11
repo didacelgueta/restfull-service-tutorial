@@ -31,7 +31,7 @@ Route::group(['prefix' => 'v1'], function () {
     ]);
     
     Route::resource('meeting/registration', RegistrationController::class)->only([
-        'store', 'destroy'
+        'store', 'update', 'destroy'
     ]);
     
     Route::post('user', [AuthController::class, 'store']);

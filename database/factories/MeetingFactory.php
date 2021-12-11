@@ -17,6 +17,7 @@ class MeetingFactory extends Factory
         return [
             'title' => $this->faker->name(),
             'description' => $this->faker->text(),
+            'time' => $this->faker->time(),
             'user_id' => function () {
                 return User::factory()->create();
             }
