@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Meeting;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class RegistrationController extends Controller
@@ -21,65 +23,25 @@ class RegistrationController extends Controller
 
         $meeting_id = $request->input('meeting_id');
         $user_id = $request->input('user_id');
-        
-        $meeting = [
-            'title' => 'Title',
-            'description' => 'Description',
-            'time' => 'Time',
-            'view_meeting' => [
-                'href' => 'api/v1/meeting/1',
-                'method' => 'GET'
-            ]
-        ];
 
-        $user = [
-            'name' => 'Name'
-        ];
+        $meeting = Meeting::findOrFail($meeting_id);
+        $user = User::findOrFail($user_id);
 
-        $response = [
-            'msg' => 'User registrated for meeting',
-            'meeting' => $meeting,
+        $message = [
+            'msg' => 'User is already registered for meeting',
             'user' => $user,
+            'meeting' => $meeting,
             'unregister' => [
-                'href' => 'api/v1/meeting/registration/1',
-                'method' => 'POST',
-                'params' => 'user_id, meeting_id'
+                'href' => 'api/v1/meeting/registration/' . $meeting->id,
+                'method' => 'DELETE'
             ]
         ];
 
-        return response()->json($response, 201);
-    }
+        if (!$meeting->users()->where('users.id', $user->id)->first()) {
+            return response()->json($message, 404);
+        }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        $this->validate($request, [
-            'meeting_id' => ['required'],
-            'user_id' => ['required']
-        ]);
-        
-        $meeting_id = $request->input('meeting_id');
-        $user_id = $request->input('user_id');
-        
-        $meeting = [
-            'title' => 'Title',
-            'description' => 'Description',
-            'time' => 'Time',
-            'view_meeting' => [
-                'href' => 'api/v1/meeting/1',
-                'method' => 'GET'
-            ]
-        ];
-
-        $user = [
-            'name' => 'Name'
-        ];
+        $user->meetings()->attach($meeting);
 
         $response = [
             'msg' => 'User registrated for meeting',
@@ -103,24 +65,13 @@ class RegistrationController extends Controller
      */
     public function destroy($id)
     {
-        $meeting = [
-            'title' => 'Title',
-            'description' => 'Description',
-            'time' => 'Time',
-            'view_meeting' => [
-                'href' => 'api/v1/meeting/1',
-                'method' => 'GET'
-            ]
-        ];
-
-        $user = [
-            'name' => 'Name'
-        ];
+        $meeting = Meeting::findOrFail($id);
+        $meeting->users()->detach();
 
         $response = [
-            'msg' => 'User registrated for meeting',
+            'msg' => 'User unregistrated for meeting',
             'meeting' => $meeting,
-            'user' => $user,
+            'user' => 'tdb',
             'unregister' => [
                 'href' => 'api/v1/meeting/registration/1',
                 'method' => 'DELETE'
