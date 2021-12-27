@@ -8,6 +8,11 @@ use Illuminate\Http\Request;
 
 class RegistrationController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:api');
+    }
+
     /**
      * Store a newly created resource in storage.
      *
@@ -33,7 +38,7 @@ class RegistrationController extends Controller
             'meeting' => $meeting,
             'unregister' => [
                 'href' => 'api/v1/meeting/registration/' . $meeting->id,
-                'method' => 'DELETE'
+                'method' => 'PATCH'
             ]
         ];
 
@@ -41,7 +46,7 @@ class RegistrationController extends Controller
             return response()->json($message, 404);
         }
 
-        $user->meetings()->attach($meeting);
+        $user->meetings()->attach($meeting->id);
 
         $response = [
             'msg' => 'User registrated for meeting',
@@ -66,12 +71,26 @@ class RegistrationController extends Controller
     public function destroy($id)
     {
         $meeting = Meeting::findOrFail($id);
-        $meeting->users()->detach();
+        
+        if (!$user = auth()->user()) {
+            return response()->json([
+                'msg' => 'User not found',
+                404
+            ]);
+        }
+
+        if (!$meeting->users()->where('users.id', $user->id)->first()) {
+            return response()->json([
+                'msg' => 'User not registered for meeting, update not successfull', 401
+            ]);
+        }
+
+        $meeting->users()->detach($user->id);
 
         $response = [
             'msg' => 'User unregistrated for meeting',
             'meeting' => $meeting,
-            'user' => 'tdb',
+            'user' => $user,
             'unregister' => [
                 'href' => 'api/v1/meeting/registration/1',
                 'method' => 'DELETE'

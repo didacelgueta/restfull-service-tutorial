@@ -10,7 +10,9 @@ class MeetingController extends Controller
 {
     public function __constructor()
     {
-        //$this->middleware('auth');
+        $this->middleware('auth:api', ['only' => [
+            'update', 'store', 'destroy'
+        ]]);
     }
     
     /**
@@ -48,14 +50,20 @@ class MeetingController extends Controller
         $this->validate($request, [
             'title' => ['required'],
             'description' => ['required'],
-            'time' => ['required', 'date_format:Y-m-d H:i:s'],
-            'user_id' => ['required']
+            'time' => ['required', 'date_format:Y-m-d H:i:s']
         ]);
+
+        if (!$user = auth()->user()) {
+            return response()->json([
+                'msg' => 'User not found',
+                404
+            ]);
+        }
 
         $title = $request->input('title');
         $description = $request->input('description');
         $time = $request->input('time');
-        $user_id = $request->input('user_id');
+        $user_id = $user->id;
 
         $meeting = Meeting::create([
             'title' => $title,
@@ -117,14 +125,20 @@ class MeetingController extends Controller
         $this->validate($request, [
             'title' => ['required'],
             'description' => ['required'],
-            'time' => ['required', 'date_format:Y-m-d H:i:s'],
-            'user_id' => ['required']
+            'time' => ['required', 'date_format:Y-m-d H:i:s']
         ]);
+
+        if (!$user = auth()->user()) {
+            return response()->json([
+                'msg' => 'User not found',
+                404
+            ]);
+        }
         
         $title = $request->input('title');
         $description = $request->input('description');
         $time = $request->input('time');
-        $user_id = $request->input('user_id');
+        $user_id = $user->id;
 
         $meeting = Meeting::with('users')->findOrFail($id);
         
@@ -166,6 +180,20 @@ class MeetingController extends Controller
     public function destroy($id)
     {
         $meeting = Meeting::findOrFail($id);
+
+        if (!$user = auth()->user()) {
+            return response()->json([
+                'msg' => 'User not found',
+                404
+            ]);
+        }
+
+        if (!$meeting->users()->where('users.id', $user->id)->first()) {
+            return response()->json([
+                'msg' => 'User not registered for meeting, update not successfull', 401
+            ]);
+        }
+
         $users = $meeting->users;
         $meeting->users()->detach();
 
